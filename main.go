@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -21,6 +22,7 @@ func main() {
 	router.GET("/flights/:id", api.ListSeats)
 	router.POST("/flights/:id/reserve", api.ReserveSeat)
 
+	fmt.Println("Application is listening on 8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 

@@ -34,16 +34,16 @@ type Row struct {
 type Plane []*Row
 
 // GetFlightDTO is to fetch all seats in an easily readable form
-func (p Plane) GetFlightDTO() map[string]bool {
-	flightDto := map[string]bool{}
+func (p Plane) GetFlightDTO() []*Seat {
+	var seats []*Seat
 	for _, row := range p {
 		for _, block := range row.Blocks {
 			for _, seat := range block.Seats {
-				flightDto[seat.Shortcut] = seat.Taken
+				seats = append(seats, seat)
 			}
 		}
 	}
-	return flightDto
+	return seats
 }
 
 // ReserveSeat is to reserve a seat on a plane

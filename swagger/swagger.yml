@@ -1,0 +1,133 @@
+openapi: "3.0.0"
+info:
+  version: 0.1.0
+  title: Seat distributer by github.com/Roverr
+servers:
+  - url: http://localhost:8080
+paths:
+  /flights:
+    get:
+      summary: Endpoint to list all available flights
+      operationId: listFlights
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: skip
+          schema:
+            type: string
+          required: false
+      tags:
+        - flight
+      responses:
+        '200':
+          description: results of available flights
+          content:
+            application/json:    
+              schema:
+                $ref: "#/components/schemas/Flights"
+  /flights/{flightId}:
+    get:
+      summary: Get available seats for a given flight
+      operationId: getAvailableSeats
+      parameters:
+        - in: path
+          name: flightId
+          schema:
+            type: string
+          required: true
+          description: ID for the given flight
+      tags:
+        - flight
+      responses:
+        '200':
+          description: Responds with all available seats for a given flight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailableSeats"
+        '404':
+          description: Flight is not found
+  /flights/{flightId}/reserve:
+    post:
+      summary: Handles reservation regarding seats of a flight
+      operationId: postReserveSeats
+      parameters:
+        - in: path
+          name: flightId
+          schema:
+            type: string
+          required: true
+          description: ID for the given flight
+      requestBody:
+        description: Describes the seats for reservation
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reserves'
+      tags:
+        - flight
+      responses:
+        '200':
+          description: Empty response for success
+        '404':
+          description: Flight is not found
+        '400':
+          description: Body is not formatted correctly
+        '500':
+          description: Unexpected error
+components:
+  securitySchemes:
+      FirebaseKeyAuth:
+        type: apiKey
+        in: header
+        name: X-Authorization-Firebase
+  schemas:
+    Reserves:
+      properties:
+        reserves:
+          type: array
+          items:
+            type: string
+    FlightObject:
+      properties:
+        id:
+          type: string
+        takeOff:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        typeId:
+          type: string
+    Flights:
+      properties:
+        count:
+          type: number
+        limit:
+          type: number
+        skip:
+          type: number
+        flights:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlightObject"
+    AvailableSeatObject:
+      properties:
+        taken:
+          type: boolean
+        shortcut:
+          type: string
+    AvailableSeats:
+      properties:
+        id:
+          type: string
+        seats:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvailableSeatObject"
