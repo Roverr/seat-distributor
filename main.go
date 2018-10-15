@@ -1,77 +1,61 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/Roverr/seat-distributor/core/hangar"
+
+	"github.com/Roverr/seat-distributor/core"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-// Seat ...
-type Seat struct {
-	Taken    bool
-	Shortcut string
-}
-
-// Block ...
-type Block struct {
-	Seats []*Seat
-}
-
-// Row ...
-type Row struct {
-	Blocks []*Block
-}
-
-func nextChar(shift int) string {
-	ch := byte('A')
-	if ch += byte(shift); ch > 'Z' {
-		return string('A')
-	}
-	return string(ch)
-}
-
-func constructSeats(rowIndex, seatsInThisRow, numberOfSeats int) []*Seat {
-	var seats []*Seat
-	for i := 0; i < numberOfSeats; i++ {
-		seats = append(seats, &Seat{
-			Shortcut: fmt.Sprintf("%d%d%s", rowIndex, i+1, nextChar(seatsInThisRow+i)),
-		})
-	}
-	return seats
-}
-
-func constructBlocks(rowIndex int, seats ...int) []*Block {
-	blocks := []*Block{}
-	appliedSeats := 0
-	for _, numberOfSeats := range seats {
-		blocks = append(blocks, &Block{
-			Seats: constructSeats(rowIndex, appliedSeats, numberOfSeats),
-		})
-		appliedSeats += numberOfSeats
-	}
-	return blocks
-}
-
-// ListPlanes ...
-func ListPlanes(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-}
-
-func getDeveloperPlane() []*Row {
-	rows := []*Row{}
-	for i := 0; i < 2; i++ {
-		rows = append(rows, &Row{
-			Blocks: constructBlocks(i+1, 3, 4, 3),
-		})
-	}
-	return rows
-}
-
 func main() {
+	schedule := createDevSchedule()
+	api := NewGeneralAPI(schedule)
+
 	router := httprouter.New()
-	router.GET("/planes", ListPlanes)
+	router.GET("/flights", api.ListFlights)
+	router.GET("/flights/:id", api.ListSeats)
+	router.POST("/flights/:id/reserve", api.ReserveSeat)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+// createDevSchedule creates a new schedule with developer planes
+func createDevSchedule() *core.Schedule {
+	devPlane := "dev-plane"
+	hangar := hangar.MemoryHangar{}
+	hangar.ConstructPlane(devPlane, 60, 3, 4, 3)
+
+	plane, err := hangar.LaunchPlane(devPlane)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	schedule := core.Schedule{
+		Hangar: &hangar,
+		Flights: []*core.Detail{
+			&core.Detail{
+				ID:      "1",
+				TakeOff: time.Now().Add(time.Hour * 24),
+				Plane:   plane,
+				From:    "Budapest",
+				To:      "New York",
+				TypeID:  devPlane,
+			},
+			&core.Detail{
+				ID:      "2",
+				TakeOff: time.Now().Add(time.Hour * 48),
+				Plane:   plane,
+				From:    "New York",
+				To:      "Budapest",
+				TypeID:  devPlane,
+			},
+		},
+	}
+
+	return &schedule
 }
